@@ -150,9 +150,8 @@ class MTDataPreproc:
                     # Preprocess data and cache for use during training
                     if self.global_rank == 0:
                         logging.info(
-                            f"Using tarred dataset for src: {cfg.train_ds.get('src_file_name')} and tgt: {cfg.train_ds.get('tgt_file_name')}"
+                            f"Creating tarred dataset for src: {cfg.train_ds.get('src_file_name')} and tgt: {cfg.train_ds.get('tgt_file_name')}"
                         )
-                    # TODO: have to get tokenizers instide .preprocess_parallel because they can't be pickled
                     self.train_tar_files, self.train_metadata_file = MTDataPreproc.preprocess_parallel_dataset(
                         clean=cfg.train_ds.clean,
                         src_fname=cfg.train_ds.get('src_file_name'),
@@ -176,13 +175,14 @@ class MTDataPreproc:
                         n_jobs=cfg.train_ds.get('n_preproc_jobs', -2),
                         tar_file_prefix=cfg.train_ds.get('tar_file_prefix', 'parallel'),
                     )
+
                     # update config
-                    # self._cfg.train_ds.tar_files = self.tar_files_to_string(self.train_tar_files)
-                    # self._cfg.train_ds.tar_files = self.train_tar_files
                     self._cfg.train_ds.metadata_file = self.train_metadata_file
+
                     logging.info(
                         f"Using tarred dataset created at {self.train_tar_files} and metadata created at {self._cfg.train_ds.metadata_file}"
                     )
+
                 elif cfg.train_ds.get('tar_files') is not None and cfg.train_ds.get('metadata_file') is None:
                     raise ValueError('A metadata file is required for tarred dataset but cfg.metadata_file is None.')
                 elif cfg.train_ds.get('tar_files') is None and cfg.train_ds.get('metadata_file') is not None:
