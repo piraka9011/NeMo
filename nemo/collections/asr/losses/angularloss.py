@@ -20,7 +20,6 @@ from nemo.core.neural_types import LabelsType, LogitsType, LossType, NeuralType
 
 __all__ = ['AngularSoftmaxLoss']
 
-
 class AngularSoftmaxLoss(Loss, Typing):
     """
     Computes ArcFace Angular softmax angle loss
