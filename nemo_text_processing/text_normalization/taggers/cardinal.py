@@ -162,18 +162,19 @@ class CardinalFst(GraphFst):
 
         graph = pynini.invert(graph)
 
-        self.single_digits_graph = pynini.closure(
-            pynini.invert(graph_digit | graph_zero) + pynutil.insert(" "), 1
-        ).optimize()
+        single_digits_graph = pynini.invert(graph_digit | graph_zero)
+        single_digits_graph = single_digits_graph + pynini.closure(pynutil.insert(" ") + single_digits_graph)
+        self.additional_formats = single_digits_graph | get_hundreds_graph()
         if not deterministic:
-            optional_alpha = pynini.closure(NEMO_ALPHA + pynutil.insert(" "))
-            optional_serial_end = pynini.closure(pynini.cross('-', ' ') + NEMO_ALPHA) | optional_alpha
-            optional_serial_start = pynini.closure(NEMO_ALPHA + pynini.cross('-', ' ')) | optional_alpha
-
-            graph = graph | self.single_digits_graph | get_hundreds_graph()
-
-            # (ALPHA)DIGITS(-ALPHA)(ALPHA)
-            graph = optional_serial_start + graph + optional_serial_end
+            # optional_alpha = pynini.closure(NEMO_ALPHA + pynutil.insert(" "))
+            # optional_serial_end = pynini.closure(pynini.cross('-', ' ') + NEMO_ALPHA) | optional_alpha
+            # optional_serial_start = pynini.closure(NEMO_ALPHA + pynini.cross('-', ' ')) | optional_alpha
+            #
+            # graph = graph | self.single_digits_graph | get_hundreds_graph()
+            #
+            # # (ALPHA)DIGITS(-ALPHA)(ALPHA)
+            # graph = optional_serial_start + graph + optional_serial_end
+            graph = graph | self.additional_formats
 
         self.graph = (graph @ delete_extra_spaces).optimize()
         optional_minus_graph = pynini.closure(pynutil.insert("negative: ") + pynini.cross("-", "\"true\" "), 0, 1)
