@@ -50,11 +50,7 @@ class CardinalFst(GraphFst):
             graph_zero = pynini.string_file(get_abs_path("data/numbers/zero.tsv"))
             single_digits_graph = pynini.invert(graph_digit | graph_zero)
             single_digits_graph = single_digits_graph + pynini.closure(pynutil.insert(" ") + single_digits_graph)
-            self.graph = (
-                pynutil.add_weight(self.graph, 1.1)
-                | pynutil.add_weight(single_digits_graph, 1.08)
-                | pynutil.add_weight(get_hundreds_graph(), 1.2)
-            )
+            self.graph = self.graph, 1.1 | single_digits_graph | get_hundreds_graph()
 
         optional_minus_graph = pynini.closure(pynutil.insert("negative: ") + pynini.cross("-", "\"true\" "), 0, 1)
         final_graph = optional_minus_graph + pynutil.insert("integer: \"") + self.graph + pynutil.insert("\"")
