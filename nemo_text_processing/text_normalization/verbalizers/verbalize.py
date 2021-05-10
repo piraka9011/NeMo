@@ -39,10 +39,10 @@ class VerbalizeFst(GraphFst):
 
     def __init__(self, deterministic: bool = True):
         super().__init__(name="verbalize", kind="verbalize")
-        decimal = DecimalFst()
-        decimal_graph = decimal.fst
         cardinal = CardinalFst(deterministic=deterministic)
         cardinal_graph = cardinal.fst
+        decimal = DecimalFst(cardinal=cardinal)
+        decimal_graph = decimal.fst
         ordinal = OrdinalFst()
         ordinal_graph = ordinal.fst
         telephone_graph = TelephoneFst().fst

@@ -91,7 +91,9 @@ class Normalizer:
         tagged_lattice = self.find_tags(text)
         tagged_text = self.select_tag(tagged_lattice)
         if verbose:
-            print(tagged_text)
+            for semiotic in ['money', 'cardinal', 'decimal', 'measure', 'date', 'electronic', 'ordinal', 'time']:
+                if semiotic in tagged_text:
+                    print(tagged_text)
         self.parser(tagged_text)
         tokens = self.parser.parse()
         tags_reordered = self.generate_permutations(tokens)

@@ -103,9 +103,8 @@ class MeasureFst(GraphFst):
         )
 
         optional_alpha = pynini.closure(pynutil.insert(" ") + NEMO_ALPHA)
-        optional_serial_end = pynini.cross('-', '') + NEMO_ALPHA + pynutil.insert(" ") \
-                              | NEMO_ALPHA + pynutil.insert(" ")
-        optional_serial_start = (NEMO_ALPHA + pynini.cross('-', ' ')) | (NEMO_ALPHA + pynutil.insert(" "))
+        optional_serial_end = pynini.closure(pynini.cross('-', '')) + NEMO_ALPHA + pynutil.insert(" ")
+        optional_serial_start = pynini.closure((NEMO_ALPHA + pynini.cross('-', ' ')) | (NEMO_ALPHA + pynutil.insert(" ")))
 
         # (ALPHA)DIGITS(-ALPHA)(ALPHA)
         # final_graph |= optional_serial_start + (cardinal_graph | decimal.final_graph_wo_negative) + optional_serial_end
@@ -115,8 +114,10 @@ class MeasureFst(GraphFst):
         #                               + pynini.closure(pynutil.insert(" ") + cardinal.single_digits_graph), 1)
 
         # def _get_serial_graph(number):
-        serial_graph_cardinal = cardinal.additional_formats + pynini.closure((pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA))
-        serial_graph_cardinal = optional_serial_start + serial_graph_cardinal + pynini.closure(pynutil.insert(" ") + serial_graph_cardinal)
+        serial_graph_cardinal_end = cardinal.graph + ((pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA))
+        serial_graph_cardinal_start = (NEMO_ALPHA + (pynutil.insert(" ")) | (pynini.cross('-', ' ') + NEMO_ALPHA)) + cardinal.graph
+
+        # serial_graph_cardinal = optional_serial_start + serial_graph_cardinal + pynini.closure(pynutil.insert(" ") + serial_graph_cardinal)
 
         serial_graph_decimal = decimal.final_graph_wo_negative + ((pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA))
         serial_graph_decimal = optional_serial_start + serial_graph_decimal + pynini.closure(pynutil.insert(" ") + serial_graph_decimal)
@@ -126,7 +127,7 @@ class MeasureFst(GraphFst):
                 pynutil.insert("cardinal { ")
                 + optional_graph_negative
                 + pynutil.insert("integer: \"")
-                + serial_graph_cardinal
+                + (serial_graph_cardinal_end | serial_graph_cardinal_start)
                 + delete_space
                 + pynutil.insert("\" } units: \"serial\""), 2.1
         )

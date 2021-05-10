@@ -16,6 +16,7 @@
 
 from nemo_text_processing.text_normalization.data_loader_utils import get_abs_path
 from nemo_text_processing.text_normalization.graph_utils import NEMO_DIGIT, GraphFst
+from nemo_text_processing.text_normalization.taggers.date import get_hundreds_graph
 
 try:
     import pynini
@@ -32,7 +33,7 @@ class CardinalFst(GraphFst):
         -23 -> cardinal { negative: "true"  integer: "twenty three" } }
     """
 
-    def __init__(self):
+    def __init__(self, deterministic=True):
         super().__init__(name="cardinal", kind="classify")
 
         graph = pynini.Far(get_abs_path("data/numbers/cardinal_number_name.far")).get_fst()
@@ -44,9 +45,19 @@ class CardinalFst(GraphFst):
             + pynini.closure(pynini.closure(pynutil.delete(","), 0, 1) + NEMO_DIGIT + NEMO_DIGIT + NEMO_DIGIT)
         ) @ graph
 
+        if not deterministic:
+            graph_digit = pynini.string_file(get_abs_path("data/numbers/digit.tsv"))
+            graph_zero = pynini.string_file(get_abs_path("data/numbers/zero.tsv"))
+            single_digits_graph = pynini.invert(graph_digit | graph_zero)
+            single_digits_graph = single_digits_graph + pynini.closure(pynutil.insert(" ") + single_digits_graph)
+            self.graph = self.graph | single_digits_graph | get_hundreds_graph()
+
         optional_minus_graph = pynini.closure(pynutil.insert("negative: ") + pynini.cross("-", "\"true\" "), 0, 1)
-
         final_graph = optional_minus_graph + pynutil.insert("integer: \"") + self.graph + pynutil.insert("\"")
-
         final_graph = self.add_tokens(final_graph)
         self.fst = final_graph.optimize()
+
+
+
+
+

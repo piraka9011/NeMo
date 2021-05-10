@@ -30,9 +30,9 @@ class DecimalFst(GraphFst):
         decimal { negative: "true" integer_part: "twelve" fractional_part: "five o o six" quantity: "billion" } -> minus twelve point five o o six billion
     """
 
-    def __init__(self):
+    def __init__(self, cardinal):
         super().__init__(name="decimal", kind="verbalize")
-        optional_sign = pynini.closure(pynini.cross("negative: \"true\"", "minus ") + delete_space, 0, 1)
+        optional_sign = cardinal.optional_sign
         integer = (
             pynutil.delete("integer_part:")
             + delete_space
@@ -40,6 +40,7 @@ class DecimalFst(GraphFst):
             + pynini.closure(NEMO_NOT_QUOTE, 1)
             + pynutil.delete("\"")
         )
+        integer = pynutil.delete("integer_part:") + cardinal.integer
         optional_integer = pynini.closure(integer + delete_space + insert_space, 0, 1)
         fractional = (
             pynutil.insert("point ")
