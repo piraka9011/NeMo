@@ -43,28 +43,29 @@ except (ModuleNotFoundError, ImportError):
     PYNINI_AVAILABLE = True
 
 
-def get_ties_graph(deterministic: bool=True):
+def get_ties_graph(deterministic: bool = True):
     """
     Returns two digit transducer, e.g. 
     03 -> o three
     12 -> thirteen
     20 -> twenty
     """
-    graph = (
-        graph_teen
-        | ties_graph + pynutil.delete("0")
-        | ties_graph + insert_space + graph_digit
-    )
+    graph = graph_teen | ties_graph + pynutil.delete("0") | ties_graph + insert_space + graph_digit
 
     if deterministic:
         graph = graph | pynini.cross("0", "oh") + insert_space + graph_digit
     else:
-        graph = graph | (pynini.cross("0", "oh") | pynini.cross("0", "o") | pynini.cross("0", "zero")) + insert_space + graph_digit
+        graph = (
+            graph
+            | (pynini.cross("0", "oh") | pynini.cross("0", "o") | pynini.cross("0", "zero"))
+            + insert_space
+            + graph_digit
+        )
 
     return graph.optimize()
 
 
-def get_hundreds_graph(deterministic: bool=True):
+def get_hundreds_graph(deterministic: bool = True):
     """
     1290 -> twelve nineteen
     3900 -> thirty nine hundred
@@ -86,7 +87,7 @@ def get_hundreds_graph(deterministic: bool=True):
     return graph
 
 
-def _get_year_graph(deterministic: bool=True):
+def _get_year_graph(deterministic: bool = True):
     """
     Transducer for year, only from 1000 - 2999 e.g.
     1290 -> twelve nineteen
@@ -112,7 +113,7 @@ class DateFst(GraphFst):
         ordinal: OrdinalFst
     """
 
-    def __init__(self, cardinal: GraphFst, deterministic: bool=True):
+    def __init__(self, cardinal: GraphFst, deterministic: bool = True):
         super().__init__(name="date", kind="classify")
 
         month_graph = pynini.string_file(get_abs_path("data/months/names.tsv")).optimize()

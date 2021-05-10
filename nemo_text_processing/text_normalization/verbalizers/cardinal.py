@@ -42,16 +42,14 @@ class CardinalFst(GraphFst):
 
         if not deterministic:
             integer = (
-                pynini.closure(NEMO_NOT_QUOTE, 1)
-                + pynutil.delete("hundred ")
+                pynini.closure(NEMO_NOT_QUOTE)
+                + pynini.union(pynutil.delete("hundred ") | pynini.cross("hundred", "hundred and"))
                 + pynini.closure(NEMO_NOT_QUOTE)
             ) | integer
 
         self.integer = delete_space + pynutil.delete("\"") + integer + pynutil.delete("\"")
         integer = pynutil.delete("integer:") + self.integer
 
-        # (pynutil.add_weight(pynutil.delete("hundred"), 1.09) | pynutil.add_weight(pynini.closure(NEMO_NOT_QUOTE, 1),
-        #                                                                           1.1))
         self.numbers = self.optional_sign + integer
         delete_tokens = self.delete_tokens(self.numbers)
         self.fst = delete_tokens.optimize()

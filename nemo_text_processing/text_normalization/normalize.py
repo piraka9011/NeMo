@@ -137,8 +137,9 @@ class Normalizer:
 
                 if verbose:
                     print(tagged_text)
-                verbalized = self.select_verbalizer(verbalizer_lattice)
-                normalized_texts.append(verbalized)
+                verbalized = self.get_all_verbalizers(verbalizer_lattice)
+                for verbalized_option in verbalized:
+                    normalized_texts.append(verbalized_option)
 
         if len(normalized_texts) == 0:
             raise ValueError()
@@ -275,6 +276,14 @@ class Normalizer:
         """
         output = pynini.shortestpath(lattice, nshortest=1, unique=True).string()
         return output
+
+    def get_all_verbalizers(self, lattice: 'pynini.FstLike') -> List[str]:
+        all_verbalizers = []
+        all = lattice.paths("utf8")
+
+        for item in all.items():
+            all_verbalizers.append(item[1])
+        return all_verbalizers
 
 
 def _get_asr_model(asr_model):
