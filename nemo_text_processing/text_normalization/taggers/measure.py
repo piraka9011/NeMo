@@ -115,8 +115,9 @@ class MeasureFst(GraphFst):
             NEMO_ALPHA + (pynutil.insert(" ")) | (pynini.cross('-', ' ') + NEMO_ALPHA)
         ) + cardinal.graph
 
-        num_alpha_graph = cardinal.graph + ((pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA))
-        serial_graph_cardinal_mix = pynini.closure(NEMO_ALPHA + pynutil.insert(" ")) + \
+        separator_graph = NEMO_ALPHA + (pynutil.insert(" ") | pynini.cross('-', ' '))
+        num_alpha_graph = (cardinal.graph | cardinal.single_digits_graph) + ((pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA))
+        serial_graph_cardinal_mix = pynini.closure(separator_graph) + \
                                     pynini.closure(num_alpha_graph, 0, 1) + \
                                     pynini.closure(pynutil.insert(" ") + num_alpha_graph)
 

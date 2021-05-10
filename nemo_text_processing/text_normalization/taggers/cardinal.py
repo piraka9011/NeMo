@@ -45,12 +45,13 @@ class CardinalFst(GraphFst):
             + pynini.closure(pynini.closure(pynutil.delete(","), 0, 1) + NEMO_DIGIT + NEMO_DIGIT + NEMO_DIGIT)
         ) @ graph
 
+        graph_digit = pynini.string_file(get_abs_path("data/numbers/digit.tsv"))
+        graph_zero = pynini.string_file(get_abs_path("data/numbers/zero.tsv"))
+        single_digits_graph = pynini.invert(graph_digit | graph_zero)
+        self.single_digits_graph = single_digits_graph + pynini.closure(pynutil.insert(" ") + single_digits_graph)
+
         if not deterministic:
-            graph_digit = pynini.string_file(get_abs_path("data/numbers/digit.tsv"))
-            graph_zero = pynini.string_file(get_abs_path("data/numbers/zero.tsv"))
-            single_digits_graph = pynini.invert(graph_digit | graph_zero)
-            single_digits_graph = single_digits_graph + pynini.closure(pynutil.insert(" ") + single_digits_graph)
-            self.graph = self.graph, 1.1 | single_digits_graph | get_hundreds_graph()
+            self.graph = self.graph | self.single_digits_graph | get_hundreds_graph()
 
         optional_minus_graph = pynini.closure(pynutil.insert("negative: ") + pynini.cross("-", "\"true\" "), 0, 1)
         final_graph = optional_minus_graph + pynutil.insert("integer: \"") + self.graph + pynutil.insert("\"")
