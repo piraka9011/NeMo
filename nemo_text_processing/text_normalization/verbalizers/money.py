@@ -59,7 +59,8 @@ class MoneyFst(GraphFst):
                 pynutil.delete("fractional_part:")
                 + delete_space
                 + pynutil.delete("\"")
-                + pynini.cross('o o', '')
+                + pynini.cross('zero', '')
+                + pynini.closure(pynini.cross(' zero', ''))
                 + delete_space
                 + pynutil.delete("\"")
                 + delete_space
