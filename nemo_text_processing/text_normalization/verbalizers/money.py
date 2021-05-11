@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nemo_text_processing.text_normalization.graph_utils import NEMO_NOT_QUOTE, GraphFst, delete_space
+from nemo_text_processing.text_normalization.graph_utils import NEMO_NOT_QUOTE, GraphFst, delete_space, insert_space
 
 try:
     import pynini
@@ -34,8 +34,50 @@ class MoneyFst(GraphFst):
         decimal: DecimalFst
     """
 
-    def __init__(self, decimal: GraphFst):
+    def __init__(self, decimal: GraphFst, deterministic=True):
         super().__init__(name="money", kind="verbalize")
+        optional_sign = pynini.closure(pynini.cross("negative: \"true\"", "minus ") + delete_space, 0, 1)
+        integer = (
+            pynutil.delete("integer_part:")
+            + delete_space
+            + pynutil.delete("\"")
+            + pynini.closure(NEMO_NOT_QUOTE, 1)
+            + pynutil.delete("\"")
+        )
+        optional_integer = pynini.closure(integer + delete_space + insert_space, 0, 1)
+        fractional = (
+            pynutil.insert("point ")
+            + pynutil.delete("fractional_part:")
+            + delete_space
+            + pynutil.delete("\"")
+            + pynini.closure(NEMO_NOT_QUOTE, 1)
+            + pynutil.delete("\"")
+        )
+
+        if not deterministic:
+            fractional2 = (
+                pynutil.delete("fractional_part:")
+                + delete_space
+                + pynutil.delete("\"")
+                + pynini.cross('o o', '')
+                + delete_space
+                + pynutil.delete("\"")
+                + delete_space
+            )
+            fractional = fractional | fractional2
+
+        quantity = (
+            delete_space
+            + insert_space
+            + pynutil.delete("quantity:")
+            + delete_space
+            + pynutil.delete("\"")
+            + pynini.closure(NEMO_NOT_QUOTE, 1)
+            + pynutil.delete("\"")
+        )
+        optional_quantity = pynini.closure(quantity, 0, 1)
+
+        graph = optional_sign + (integer | integer + quantity | optional_integer + fractional + optional_quantity)
         unit = (
             pynutil.delete("currency:")
             + delete_space
@@ -43,6 +85,6 @@ class MoneyFst(GraphFst):
             + pynini.closure(NEMO_NOT_QUOTE, 1)
             + pynutil.delete("\"")
         )
-        graph = decimal.numbers + delete_space + pynutil.insert(" ") + unit
+        graph = graph + delete_space + pynutil.insert(" ") + unit
         delete_tokens = self.delete_tokens(graph)
         self.fst = delete_tokens.optimize()

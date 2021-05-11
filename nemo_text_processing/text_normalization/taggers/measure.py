@@ -107,8 +107,9 @@ class MeasureFst(GraphFst):
         if deterministic:
             num_graph = cardinal.graph | cardinal.single_digits_graph
 
-        serial_graph_cardinal_start = pynini.closure(
-            NEMO_ALPHA + pynutil.insert(" ") | (NEMO_ALPHA + pynini.cross('-', ' ')), 1) + num_graph
+        serial_graph_cardinal_start = (
+            pynini.closure(NEMO_ALPHA + pynutil.insert(" ") | (NEMO_ALPHA + pynini.cross('-', ' ')), 1) + num_graph
+        )
         serial_end = pynini.closure(pynutil.insert(" ") + NEMO_ALPHA + pynini.closure(pynutil.insert(" ") + num_graph))
 
         serial_graph_cardinal_end = num_graph + (

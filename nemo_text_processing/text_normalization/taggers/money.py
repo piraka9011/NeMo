@@ -21,7 +21,7 @@ from nemo_text_processing.text_normalization.graph_utils import (
     convert_space,
     insert_space,
 )
-from nemo_text_processing.text_normalization.taggers.date import _get_year_graph
+from nemo_text_processing.text_normalization.taggers.date import get_hundreds_graph
 
 try:
     import pynini
@@ -55,7 +55,14 @@ class MoneyFst(GraphFst):
         graph_unit_singular = pynutil.insert("currency: \"") + unit_singular + pynutil.insert("\"")
         graph_unit_plural = pynutil.insert("currency: \"") + unit_plural + pynutil.insert("\"")
 
+        singular_graph = (
+            graph_unit_singular + pynutil.insert(" integer_part: \"") + pynini.cross("1", "one") + pynutil.insert("\"")
+        )
+
+        graph_decimal = graph_unit_plural + insert_space + graph_decimal_final
+
         if deterministic:
+            print('1')
             graph_integer = (
                 graph_unit_plural
                 + pynutil.insert(" integer_part: \"")
@@ -66,13 +73,13 @@ class MoneyFst(GraphFst):
             graph_integer = (
                 graph_unit_plural
                 + pynutil.insert(" integer_part: \"")
-                + ((NEMO_SIGMA - "1") @ (_get_year_graph() | cardinal_graph))
+                + ((NEMO_SIGMA - "1") @ (get_hundreds_graph(deterministic) | cardinal_graph))
                 + pynutil.insert("\"")
             )
-        graph_integer |= (
-            graph_unit_singular + pynutil.insert(" integer_part: \"") + pynini.cross("1", "one") + pynutil.insert("\"")
-        )
-        graph_decimal = graph_unit_plural + insert_space + graph_decimal_final
+            graph_decimal |= singular_graph + insert_space + graph_decimal_final
+
+        graph_integer |= singular_graph
+
         final_graph = graph_integer | graph_decimal
         final_graph = self.add_tokens(final_graph)
         self.fst = final_graph.optimize()

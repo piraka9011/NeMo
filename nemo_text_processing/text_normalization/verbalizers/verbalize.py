@@ -50,7 +50,7 @@ class VerbalizeFst(GraphFst):
         measure_graph = MeasureFst(decimal=decimal, cardinal=cardinal).fst
         time_graph = TimeFst().fst
         date_graph = DateFst(ordinal=ordinal).fst
-        money_graph = MoneyFst(decimal=decimal).fst
+        money_graph = MoneyFst(decimal=decimal, deterministic=deterministic).fst
         whitelist_graph = WhiteListFst().fst
         graph = (
             time_graph

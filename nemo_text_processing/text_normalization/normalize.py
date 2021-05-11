@@ -92,9 +92,7 @@ class Normalizer:
         tagged_lattice = self.find_tags(text)
         tagged_text = self.select_tag(tagged_lattice)
         if verbose:
-            for semiotic in self.semiotic_classes:
-                if semiotic in tagged_text:
-                    print(tagged_text)
+            print(tagged_text)
         self.parser(tagged_text)
         tokens = self.parser.parse()
         tags_reordered = self.generate_permutations(tokens)
@@ -107,7 +105,7 @@ class Normalizer:
             return output
         raise ValueError()
 
-    def normalize_with_audio(self, text: str, transcript: str, verbose: bool, asr_lower: bool=False) -> str:
+    def normalize_with_audio(self, text: str, transcript: str, verbose: bool, asr_lower: bool = True) -> str:
         """
         Main function. Normalizes tokens from written to spoken form
             e.g. 12 kg -> twelve kilograms
@@ -133,11 +131,6 @@ class Normalizer:
             for tagged_text in tags_reordered:
                 tagged_text = pynini.escape(tagged_text)
 
-                semiotic = False
-                for sem_cl in self.semiotic_classes:
-                    if sem_cl in tagged_text:
-                        semiotic = True
-
                 verbalizer_lattice = self.find_verbalizer(tagged_text)
                 if verbalizer_lattice.num_states() == 0:
                     continue
@@ -145,14 +138,9 @@ class Normalizer:
                 if verbose:
                     print(tagged_text)
 
-                normalized_texts.append(self.select_verbalizer(verbalizer_lattice))
-                if semiotic:
-                    verbalized = self.get_all_verbalizers(verbalizer_lattice)
-                    for verbalized_option in verbalized:
-                        normalized_texts.append(verbalized_option)
-                else:
-                    output = self.select_verbalizer(verbalizer_lattice)
-                    return (output, 0)
+                verbalized = self.get_all_verbalizers(verbalizer_lattice)
+                for verbalized_option in verbalized:
+                    normalized_texts.append(verbalized_option)
 
         if len(normalized_texts) == 0:
             raise ValueError()
@@ -161,11 +149,21 @@ class Normalizer:
         for i in range(len(normalized_texts)):
             for punct in punctuation:
                 normalized_texts[i] = normalized_texts[i].replace(f' {punct}', punct)
+            normalized_texts[i] = (
+                normalized_texts[i].replace('--', '-').replace('( ', '(').replace(' )', ')').replace('  ', ' ')
+            )
         normalized_texts = set(normalized_texts)
 
         normalized_options = []
         for text in normalized_texts:
-            cer = round(word_error_rate([transcript], [text.lower()], use_cer=True) * 100, 2)
+            if asr_lower:
+                text_clean = text.lower()
+            else:
+                text_clean = text
+            for punct in punctuation:
+                text_clean = text_clean.replace(punct, '')
+            text_clean = text_clean.replace('-', ' ')
+            cer = round(word_error_rate([transcript], [text_clean], use_cer=True) * 100, 2)
             normalized_options.append((text, cer))
 
         normalized_options = sorted(normalized_options, key=lambda x: x[1])
@@ -327,6 +325,8 @@ if __name__ == "__main__":
     if args.audio_data is None:
         if args.input is None:
             raise ValueError(f'input argument is not provided')
+
+        print(f'input: {args.input}')
         normalizer = Normalizer(input_case=args.input_case)
         print(f'|{normalizer.normalize(args.input, verbose=args.verbose)}|')
     elif not os.path.exists(args.audio_data):
@@ -352,7 +352,7 @@ if __name__ == "__main__":
                             args.input, transcript, verbose=args.verbose
                         )
 
-                        if cer > line['CER_gt_normalized']:
+                        if True or cer > line['CER_gt_normalized']:
                             print(f'input     : {args.input}')
                             print(f'transcript: {transcript}')
                             print('gt  :', line['gt_normalized'], line['CER_gt_normalized'])
