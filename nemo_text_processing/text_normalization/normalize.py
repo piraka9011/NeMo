@@ -332,7 +332,8 @@ if __name__ == "__main__":
             manifest_out = manifest.replace('.json', '_nemo_wfst.json')
             with open(manifest, 'r') as f:
                 with open(manifest_out, 'w') as f_out:
-                    for line in f:
+                    for i, line in enumerate(f):
+                        print(i)
                         line = json.loads(line)
                         audio = line['audio_filepath']
                         if 'transcript' in line:
