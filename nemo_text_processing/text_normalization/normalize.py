@@ -132,15 +132,27 @@ class Normalizer:
             tags_reordered = self.generate_permutations(tokens)
             for tagged_text in tags_reordered:
                 tagged_text = pynini.escape(tagged_text)
+
+                semiotic = False
+                for sem_cl in self.semiotic_classes:
+                    if sem_cl in tagged_text:
+                        semiotic = True
+
                 verbalizer_lattice = self.find_verbalizer(tagged_text)
                 if verbalizer_lattice.num_states() == 0:
                     continue
 
                 if verbose:
                     print(tagged_text)
-                verbalized = self.get_all_verbalizers(verbalizer_lattice)
-                for verbalized_option in verbalized:
-                    normalized_texts.append(verbalized_option)
+
+                normalized_texts.append(self.select_verbalizer(verbalizer_lattice))
+                # if semiotic:
+                #     verbalized = self.get_all_verbalizers(verbalizer_lattice)
+                #     for verbalized_option in verbalized:
+                #         normalized_texts.append(verbalized_option)
+                # else:
+                #     output = self.select_verbalizer(verbalizer_lattice)
+                #     return (output, 0)
 
         if len(normalized_texts) == 0:
             raise ValueError()
@@ -243,7 +255,7 @@ class Normalizer:
                     all_semiotic_tags.append(item[1])
 
         if len(all_semiotic_tags) == 0:
-            all_semiotic_tags.append(self.select_verbalizer(lattice))
+            all_semiotic_tags.append(self.select_tag(lattice))
         return all_semiotic_tags
 
     def select_tag(self, lattice: 'pynini.FstLike') -> str:
@@ -288,7 +300,12 @@ class Normalizer:
         all = lattice.paths("utf8")
 
         for item in all.items():
-            all_verbalizers.append(item[1])
+            for sem_cl in self.semiotic_classes:
+                if sem_cl in item[1]:
+                    all_verbalizers.append(item[1])
+
+        if len(all_verbalizers) == 0:
+            all_verbalizers.append(self.select_verbalizer(lattice))
         return all_verbalizers
 
 
