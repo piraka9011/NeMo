@@ -107,13 +107,8 @@ class MeasureFst(GraphFst):
         if deterministic:
             num_graph = cardinal.graph | cardinal.single_digits_graph
 
-        optional_serial_start = pynini.closure(
-            (NEMO_ALPHA + pynini.cross('-', ' ')) | (NEMO_ALPHA + pynutil.insert(" "))
-        )
-
-        serial_graph_cardinal_start = (
-            NEMO_ALPHA + pynutil.insert(" ") | (NEMO_ALPHA + pynini.cross('-', ' '))
-        ) + num_graph
+        serial_graph_cardinal_start = pynini.closure(
+            NEMO_ALPHA + pynutil.insert(" ") | (NEMO_ALPHA + pynini.cross('-', ' ')), 1) + num_graph
         serial_end = pynini.closure(pynutil.insert(" ") + NEMO_ALPHA + pynini.closure(pynutil.insert(" ") + num_graph))
 
         serial_graph_cardinal_end = num_graph + (
@@ -129,13 +124,6 @@ class MeasureFst(GraphFst):
             serial_end | serial_end2
         )
 
-        # serial_graph_decimal = decimal.final_graph_wo_negative + (
-        #     (pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA)
-        # )
-        # serial_graph_decimal = (
-        #     optional_serial_start + serial_graph_decimal + pynini.closure(pynutil.insert(" ") + serial_graph_decimal)
-        # )
-
         subgraph_cardinal = pynutil.add_weight(subgraph_cardinal.optimize(), 1.09)
         subgraph_cardinal |= pynutil.add_weight(
             pynutil.insert("cardinal { ")
@@ -146,15 +134,6 @@ class MeasureFst(GraphFst):
             + pynutil.insert("\" } units: \"serial\""),
             2.1,
         )
-
-        # subgraph_decimal = pynutil.add_weight(subgraph_decimal.optimize(), 1.09)
-        # subgraph_decimal |= pynutil.add_weight(
-        #     pynutil.insert("decimal { ")
-        #     + optional_graph_negative
-        #     + serial_graph_decimal
-        #     + pynutil.insert(" } units: \"serial\""),
-        #     2.1,
-        # )
 
         final_graph = subgraph_decimal | subgraph_cardinal
         final_graph = self.add_tokens(final_graph)

@@ -107,7 +107,7 @@ class Normalizer:
             return output
         raise ValueError()
 
-    def normalize_with_audio(self, text: str, transcript: str, verbose: bool) -> str:
+    def normalize_with_audio(self, text: str, transcript: str, verbose: bool, asr_lower: bool=False) -> str:
         """
         Main function. Normalizes tokens from written to spoken form
             e.g. 12 kg -> twelve kilograms
@@ -245,7 +245,7 @@ class Normalizer:
         lattice = text @ self.tagger.fst
         return lattice
 
-    def select_all_semiotic_tags(self, lattice: 'pynini.FstLike', n=10) -> List[str]:
+    def select_all_semiotic_tags(self, lattice: 'pynini.FstLike', n=100) -> List[str]:
         tagged_text_options = pynini.shortestpath(lattice, nshortest=n)
         tagged_text_options = [t[1] for t in tagged_text_options.paths("utf8").items()]
         return tagged_text_options
@@ -287,7 +287,7 @@ class Normalizer:
         output = pynini.shortestpath(lattice, nshortest=1, unique=True).string()
         return output
 
-    def get_all_verbalizers(self, lattice: 'pynini.FstLike', n = 3) -> List[str]:
+    def get_all_verbalizers(self, lattice: 'pynini.FstLike', n=100) -> List[str]:
         verbalized_options = pynini.shortestpath(lattice, nshortest=n)
         verbalized_options = [t[1] for t in verbalized_options.paths("utf8").items()]
         return verbalized_options
@@ -339,8 +339,7 @@ if __name__ == "__main__":
             manifest_out = manifest.replace('.json', '_nemo_wfst.json')
             with open(manifest, 'r') as f:
                 with open(manifest_out, 'w') as f_out:
-                    for i, line in enumerate(f):
-                        print(i)
+                    for line in tqdm(f):
                         line = json.loads(line)
                         audio = line['audio_filepath']
                         if 'transcript' in line:
