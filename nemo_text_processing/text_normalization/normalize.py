@@ -50,6 +50,7 @@ class Normalizer:
         self.tagger = ClassifyFst(input_case=input_case, deterministic=deterministic)
         self.verbalizer = VerbalizeFinalFst(deterministic=deterministic)
         self.parser = TokenParser()
+        self.semiotic_classes = ['money', 'cardinal', 'decimal', 'measure', 'date', 'electronic', 'ordinal', 'time']
 
     def normalize_list(self, texts: List[str], verbose=False) -> List[str]:
         """
@@ -91,7 +92,7 @@ class Normalizer:
         tagged_lattice = self.find_tags(text)
         tagged_text = self.select_tag(tagged_lattice)
         if verbose:
-            for semiotic in ['money', 'cardinal', 'decimal', 'measure', 'date', 'electronic', 'ordinal', 'time']:
+            for semiotic in self.semiotic_classes:
                 if semiotic in tagged_text:
                     print(tagged_text)
         self.parser(tagged_text)
@@ -237,7 +238,12 @@ class Normalizer:
         all = lattice.paths("utf8")
 
         for item in all.items():
-            all_semiotic_tags.append(item[1])
+            for sem_class in self.semiotic_classes:
+                if sem_class in item[1]:
+                    all_semiotic_tags.append(item[1])
+
+        if len(all_semiotic_tags) == 0:
+            all_semiotic_tags.append(self.select_verbalizer(lattice))
         return all_semiotic_tags
 
     def select_tag(self, lattice: 'pynini.FstLike') -> str:
