@@ -17,12 +17,12 @@ from nemo_text_processing.text_normalization.data_loader_utils import get_abs_pa
 from nemo_text_processing.text_normalization.graph_utils import (
     NEMO_ALPHA,
     NEMO_NON_BREAKING_SPACE,
+    NEMO_NOT_SPACE,
     NEMO_SIGMA,
     SINGULAR_TO_PLURAL,
     GraphFst,
     convert_space,
     delete_extra_space,
-    NEMO_NOT_SPACE,
     delete_space,
 )
 
@@ -103,33 +103,31 @@ class MeasureFst(GraphFst):
             + unit_singular
         )
 
-        optional_alpha = pynini.closure(pynutil.insert(" ") + NEMO_ALPHA)
-        optional_serial_end = pynini.closure(pynini.cross('-', '')) + NEMO_ALPHA + pynutil.insert(" ")
-
-        num_alpha_graph = cardinal.graph
+        num_graph = cardinal.graph
         if deterministic:
-            num_alpha_graph = cardinal.graph | cardinal.single_digits_graph
+            num_agraph = cardinal.graph | cardinal.single_digits_graph
 
         optional_serial_start = pynini.closure(
             (NEMO_ALPHA + pynini.cross('-', ' ')) | (NEMO_ALPHA + pynutil.insert(" "))
         )
 
-        serial_graph_cardinal_end = num_alpha_graph + (
+        serial_graph_cardinal_start = (
+            NEMO_ALPHA + pynutil.insert(" ") | (NEMO_ALPHA + pynini.cross('-', ' '))
+        ) + num_graph
+        serial_end = pynini.closure(pynutil.insert(" ") + NEMO_ALPHA + pynini.closure(pynutil.insert(" ") + num_graph))
+
+        serial_graph_cardinal_end = num_graph + (
             (pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA)
         )
+        serial_end2 = pynini.closure(
+            pynutil.insert(" ")
+            + num_graph
+            + pynini.closure((pynutil.insert(" ") | pynini.cross("-", " ")) + NEMO_ALPHA)
+        )
 
-        serial_graph_cardinal_start = (NEMO_ALPHA + (pynutil.insert(" ")) | (pynini.cross('-', ' ') + NEMO_ALPHA)
-        ) + num_alpha_graph
-        serial_graph_cardinal_start += pynini.closure(pynutil.insert(" ") + NEMO_ALPHA + pynini.closure(pynutil.insert(" ") + num_alpha_graph))
-        serial_graph_cardinal_end += pynini.closure(pynutil.insert(" ") + num_alpha_graph + pynini.closure(pynutil.insert(" ") + NEMO_ALPHA))
-        # separator_graph = NEMO_NOT_SPACE + (pynutil.insert(" ") | pynini.cross('-', ' '))
-        # num_alpha_graph = num_alpha_graph + ((pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA))
-        # serial_graph_cardinal_mix = (pynini.closure(separator_graph) |
-        #                             pynini.closure((NEMO_ALPHA + pynutil.insert(" ")) | (NEMO_ALPHA + pynini.cross('-', ' ')))) + \
-        #                             num_alpha_graph + \
-        #                             pynini.closure(pynutil.insert(" ") + num_alpha_graph)
-
-        # serial_graph_cardinal = optional_serial_start + serial_graph_cardinal + pynini.closure(pynutil.insert(" ") + serial_graph_cardinal)
+        serial_graph = (serial_graph_cardinal_start | serial_graph_cardinal_end) + pynini.closure(
+            serial_end | serial_end2
+        )
 
         serial_graph_decimal = decimal.final_graph_wo_negative + (
             (pynutil.insert(" ") + NEMO_ALPHA) | (pynini.cross('-', ' ') + NEMO_ALPHA)
@@ -138,13 +136,12 @@ class MeasureFst(GraphFst):
             optional_serial_start + serial_graph_decimal + pynini.closure(pynutil.insert(" ") + serial_graph_decimal)
         )
 
-
         subgraph_cardinal = pynutil.add_weight(subgraph_cardinal.optimize(), 1.09)
         subgraph_cardinal |= pynutil.add_weight(
             pynutil.insert("cardinal { ")
             + optional_graph_negative
             + pynutil.insert("integer: \"")
-            + (serial_graph_cardinal_end | serial_graph_cardinal_start)
+            + serial_graph
             + delete_space
             + pynutil.insert("\" } units: \"serial\""),
             2.1,
