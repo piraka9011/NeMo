@@ -105,7 +105,7 @@ class MeasureFst(GraphFst):
 
         num_graph = cardinal.graph
         if deterministic:
-            num_agraph = cardinal.graph | cardinal.single_digits_graph
+            num_graph = cardinal.graph | cardinal.single_digits_graph
 
         optional_serial_start = pynini.closure(
             (NEMO_ALPHA + pynini.cross('-', ' ')) | (NEMO_ALPHA + pynutil.insert(" "))
