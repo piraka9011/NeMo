@@ -146,13 +146,13 @@ class Normalizer:
                     print(tagged_text)
 
                 normalized_texts.append(self.select_verbalizer(verbalizer_lattice))
-                # if semiotic:
-                #     verbalized = self.get_all_verbalizers(verbalizer_lattice)
-                #     for verbalized_option in verbalized:
-                #         normalized_texts.append(verbalized_option)
-                # else:
-                #     output = self.select_verbalizer(verbalizer_lattice)
-                #     return (output, 0)
+                if semiotic:
+                    verbalized = self.get_all_verbalizers(verbalizer_lattice)
+                    for verbalized_option in verbalized:
+                        normalized_texts.append(verbalized_option)
+                else:
+                    output = self.select_verbalizer(verbalizer_lattice)
+                    return (output, 0)
 
         if len(normalized_texts) == 0:
             raise ValueError()
@@ -245,18 +245,10 @@ class Normalizer:
         lattice = text @ self.tagger.fst
         return lattice
 
-    def select_all_semiotic_tags(self, lattice: 'pynini.FstLike') -> List[str]:
-        all_semiotic_tags = []
-        all = lattice.paths("utf8")
-
-        for item in all.items():
-            for sem_class in self.semiotic_classes:
-                if sem_class in item[1]:
-                    all_semiotic_tags.append(item[1])
-
-        if len(all_semiotic_tags) == 0:
-            all_semiotic_tags.append(self.select_tag(lattice))
-        return all_semiotic_tags
+    def select_all_semiotic_tags(self, lattice: 'pynini.FstLike', n=10) -> List[str]:
+        tagged_text_options = pynini.shortestpath(lattice, nshortest=n)
+        tagged_text_options = [t[1] for t in tagged_text_options.paths("utf8").items()]
+        return tagged_text_options
 
     def select_tag(self, lattice: 'pynini.FstLike') -> str:
         """
@@ -295,18 +287,10 @@ class Normalizer:
         output = pynini.shortestpath(lattice, nshortest=1, unique=True).string()
         return output
 
-    def get_all_verbalizers(self, lattice: 'pynini.FstLike') -> List[str]:
-        all_verbalizers = []
-        all = lattice.paths("utf8")
-
-        for item in all.items():
-            for sem_cl in self.semiotic_classes:
-                if sem_cl in item[1]:
-                    all_verbalizers.append(item[1])
-
-        if len(all_verbalizers) == 0:
-            all_verbalizers.append(self.select_verbalizer(lattice))
-        return all_verbalizers
+    def get_all_verbalizers(self, lattice: 'pynini.FstLike', n = 3) -> List[str]:
+        verbalized_options = pynini.shortestpath(lattice, nshortest=n)
+        verbalized_options = [t[1] for t in verbalized_options.paths("utf8").items()]
+        return verbalized_options
 
 
 def _get_asr_model(asr_model):
