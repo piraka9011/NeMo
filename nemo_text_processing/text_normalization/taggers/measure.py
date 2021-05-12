@@ -103,13 +103,8 @@ class MeasureFst(GraphFst):
             + unit_singular
         )
 
-        num_graph = cardinal.graph
-        if deterministic:
-            num_graph = cardinal.graph | cardinal.single_digits_graph
-
-        subgraph_cardinal = subgraph_cardinal.optimize()
-
         if not deterministic:
+            num_graph = cardinal.graph
             serial_graph_cardinal_start = (
                     pynini.closure(NEMO_ALPHA + pynutil.insert(" ") | (NEMO_ALPHA + pynini.cross('-', ' ')),
                                    1) + num_graph
