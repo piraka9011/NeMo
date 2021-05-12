@@ -135,9 +135,6 @@ class Normalizer:
                 if verbalizer_lattice.num_states() == 0:
                     continue
 
-                if verbose:
-                    print(tagged_text)
-
                 verbalized = self.get_all_verbalizers(verbalizer_lattice)
                 for verbalized_option in verbalized:
                     normalized_texts.append(verbalized_option)
@@ -352,7 +349,7 @@ if __name__ == "__main__":
                             args.input, transcript, verbose=args.verbose
                         )
 
-                        if True or cer > line['CER_gt_normalized']:
+                        if cer > line['CER_gt_normalized']:
                             print(f'input     : {args.input}')
                             print(f'transcript: {transcript}')
                             print('gt  :', line['gt_normalized'], line['CER_gt_normalized'])

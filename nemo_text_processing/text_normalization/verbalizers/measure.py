@@ -35,13 +35,15 @@ class MeasureFst(GraphFst):
         cardinal: CardinalFst
     """
 
-    def __init__(self, decimal: GraphFst, cardinal: GraphFst):
+    def __init__(self, decimal: GraphFst, cardinal: GraphFst, deterministic=True):
         super().__init__(name="measure", kind="verbalize")
         optional_sign = pynini.closure(pynini.cross("negative: \"true\"", "minus ") + delete_space, 0, 1)
-        unit_serial = pynutil.add_weight(pynini.cross("serial", ""), 1.09)
-        unit_default = pynutil.add_weight(pynutil.insert(" ") + pynini.closure(NEMO_CHAR - " ", 1), 1.1)
+        unit = pynutil.insert(" ") + pynini.closure(NEMO_CHAR - " ", 1)
 
-        unit = pynutil.delete("units: \"") + (unit_serial | unit_default) + pynutil.delete("\"") + delete_space
+        if not deterministic:
+            unit |= pynini.cross("serial", "")
+
+        unit = pynutil.delete("units: \"") + unit + pynutil.delete("\"") + delete_space
         graph_decimal = (
             pynutil.delete("decimal {")
             + delete_space
