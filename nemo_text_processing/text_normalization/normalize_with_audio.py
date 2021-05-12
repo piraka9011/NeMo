@@ -50,7 +50,7 @@ class NormalizerWithAudio(Normalizer):
         self.verbalizer = VerbalizeFinalFst(deterministic=False)
         self.semiotic_classes = ['money', 'cardinal', 'decimal', 'measure', 'date', 'electronic', 'ordinal', 'time']
 
-    def normalize_with_audio(self, text: str, transcript: str, verbose: bool, asr_lower: bool = True) -> str:
+    def normalize_with_audio(self, text: str, transcript: str, asr_vocabulary: List[str], verbose: bool=False, asr_lower: bool=True) -> str:
         """
         Main function. Normalizes tokens from written to spoken form
             e.g. 12 kg -> twelve kilograms
@@ -60,14 +60,18 @@ class NormalizerWithAudio(Normalizer):
             verbose: whether to print intermediate meta information
         Returns: spoken form that matches the audio file best
         """
-        text = text.strip()
-        if not text:
-            if verbose:
-                print(text)
-            return text
-        text = pynini.escape(text)
-        tagged_lattice = self.find_tags(text)
-        tagged_texts = self.select_all_semiotic_tags(tagged_lattice)
+        def get_tagged_texts(text):
+            text = text.strip()
+            if not text:
+                if verbose:
+                    print(text)
+                return text
+            text = pynini.escape(text)
+            tagged_lattice = self.find_tags(text)
+            tagged_texts = self.select_all_semiotic_tags(tagged_lattice)
+            return tagged_texts
+
+        tagged_texts = set(get_tagged_texts(text) + get_tagged_texts(self.preprocess(text)))
         normalized_texts = []
         for tagged_text in tagged_texts:
             self.parser(tagged_text)
@@ -124,6 +128,20 @@ class NormalizerWithAudio(Normalizer):
         verbalized_options = [t[1] for t in verbalized_options.paths("utf8").items()]
         return verbalized_options
 
+    def preprocess(self, text: str):
+        text = text.replace('--', '-')
+        space_right = '!?:;,.-()*+-/<=>@^_'
+        space_both = '-()*+-/<=>@^_'
+
+        for punct in space_right:
+            text = text.replace(punct, punct + ' ')
+        for punct in space_both:
+            text = text.replace(punct, ' ' + punct + ' ')
+
+        # remove extra space
+        text = re.sub(r' +', ' ', text)
+        return text
+
 
 def _get_asr_model(asr_model: nemo_asr.models.EncDecCTCModel):
     if os.path.exists(args.model):
@@ -137,22 +155,11 @@ def _get_asr_model(asr_model: nemo_asr.models.EncDecCTCModel):
     vocabulary = asr_model.cfg.decoder.vocabulary
     return asr_model, vocabulary
 
-def _preprocess(text: str):
-    space_right = '!?:;,.-()*+-/<=>@^_'
-    space_both = '-()*+-/<=>@^_'
-
-    for punct in space_right:
-        text = text.replace(punct, punct + ' ')
-    for punct in space_both:
-        text = text.replace(punct, ' ' + punct + ' ')
-
-    # remove extra space
-    text = re.sub(r' +', ' ', text)
-    return text
-
-
 def parse_args():
     parser = ArgumentParser()
+    parser.add_argument(
+        "--input", help="input string", default=None, type=str
+    )
     parser.add_argument(
         "--input_case", help="input capitalization", choices=["lower_cased", "cased"], default="cased", type=str
     )
@@ -163,10 +170,7 @@ def parse_args():
     )
     return parser.parse_args()
 
-
-if __name__ == "__main__":
-    args = parse_args()
-
+def main(args):
     if not os.path.exists(args.audio_data):
         raise ValueError(f'{args.audio_data} not found.')
     else:
@@ -182,12 +186,15 @@ if __name__ == "__main__":
                         audio = line['audio_filepath']
                         if 'transcript' in line:
                             transcript = line['transcript']
+                            # TODO fix
+                            asr_vocabulary = None
+
                         else:
-                            asr_model, _ = _get_asr_model(args.model)
+                            asr_model, asr_vocabulary = _get_asr_model(args.model)
                             transcript = asr_model.transcribe([audio])[0]
                         args.input = line['text']
                         normalized_text, cer = normalizer.normalize_with_audio(
-                            args.input, transcript, verbose=args.verbose
+                            args.input, transcript, asr_vocabulary, verbose=args.verbose
                         )
 
                         if cer > line['CER_gt_normalized']:
@@ -206,3 +213,14 @@ if __name__ == "__main__":
             transcript = asr_model.transcribe([args.audio_data])[0]
             normalized_text, cer = normalizer.normalize_with_audio(args.input, transcript, verbose=args.verbose)
             print(normalized_text)
+
+if __name__ == "__main__":
+    args = parse_args()
+
+    if args.input:
+        normalizer = NormalizerWithAudio(input_case=args.input_case)
+        normalized_text, cer = normalizer.normalize_with_audio(args.input, None, None, verbose=args.verbose)
+    else:
+        main(args)
+
+
