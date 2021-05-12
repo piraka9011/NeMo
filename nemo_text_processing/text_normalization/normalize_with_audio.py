@@ -74,6 +74,8 @@ class NormalizerWithAudio(Normalizer):
         tagged_texts = set(get_tagged_texts(text) + get_tagged_texts(self.preprocess(text)))
         normalized_texts = []
         for tagged_text in tagged_texts:
+            if 'currency: "dollars"' in tagged_text:
+                print(tagged_text)
             self.parser(tagged_text)
             tokens = self.parser.parse()
             tags_reordered = self.generate_permutations(tokens)
@@ -85,7 +87,9 @@ class NormalizerWithAudio(Normalizer):
                     continue
 
                 verbalized = self.get_all_verbalizers(verbalizer_lattice)
+                # verbalized = [self.select_verbalizer(verbalizer_lattice)]
                 for verbalized_option in verbalized:
+                    # TODO check this
                     normalized_texts.append(verbalized_option)
 
         if len(normalized_texts) == 0:

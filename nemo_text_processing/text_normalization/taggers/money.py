@@ -62,7 +62,6 @@ class MoneyFst(GraphFst):
         graph_decimal = graph_unit_plural + insert_space + graph_decimal_final
 
         if deterministic:
-            print('1')
             graph_integer = (
                 graph_unit_plural
                 + pynutil.insert(" integer_part: \"")
