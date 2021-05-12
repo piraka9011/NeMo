@@ -70,7 +70,6 @@ class NormalizerWithAudio(Normalizer):
         tagged_texts = self.select_all_semiotic_tags(tagged_lattice)
         normalized_texts = []
         for tagged_text in tagged_texts:
-            print(tagged_text)
             self.parser(tagged_text)
             tokens = self.parser.parse()
             tags_reordered = self.generate_permutations(tokens)
