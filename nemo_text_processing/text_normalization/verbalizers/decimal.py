@@ -32,6 +32,7 @@ class DecimalFst(GraphFst):
 
     def __init__(self, cardinal):
         super().__init__(name="decimal", kind="verbalize")
+
         optional_sign = pynini.closure(pynini.cross("negative: \"true\"", "minus ") + delete_space, 0, 1)
         integer = (
             pynutil.delete("integer_part:")

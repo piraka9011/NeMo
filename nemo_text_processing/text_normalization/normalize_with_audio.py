@@ -74,7 +74,7 @@ class NormalizerWithAudio(Normalizer):
         tagged_texts = set(get_tagged_texts(text) + get_tagged_texts(self.preprocess(text)))
         normalized_texts = []
         for tagged_text in tagged_texts:
-            if 'currency: "dollars"' in tagged_text:
+            if 'currency' in tagged_text and 'fract' in tagged_text:
                 print(tagged_text)
             self.parser(tagged_text)
             tokens = self.parser.parse()

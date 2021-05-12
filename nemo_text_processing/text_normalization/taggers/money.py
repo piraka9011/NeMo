@@ -42,7 +42,6 @@ class MoneyFst(GraphFst):
         cardinal: CardinalFst
         decimal: DecimalFst
     """
-
     def __init__(self, cardinal: GraphFst, decimal: GraphFst, deterministic: bool = True):
         super().__init__(name="money", kind="classify")
         cardinal_graph = cardinal.graph
