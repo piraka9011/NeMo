@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nemo_text_processing.text_normalization.graph_utils import NEMO_NOT_QUOTE, GraphFst, delete_space, insert_space
+from nemo_text_processing.text_normalization.graph_utils import NEMO_NOT_QUOTE, GraphFst, delete_space, insert_space, get_abs_path
 
 try:
     import pynini
@@ -45,14 +45,15 @@ class MoneyFst(GraphFst):
             + pynutil.delete("\"")
         )
         optional_integer = pynini.closure(integer + delete_space + insert_space, 0, 1)
-        fractional = (
-            pynutil.insert("point ")
-            + pynutil.delete("fractional_part:")
+        fractional_default = (
+            pynutil.delete("fractional_part:")
             + delete_space
             + pynutil.delete("\"")
             + pynini.closure(NEMO_NOT_QUOTE, 1)
             + pynutil.delete("\"")
         )
+
+        fractional = pynutil.insert("point ") + fractional_default
 
         if not deterministic:
             fractional2 = (
@@ -65,7 +66,8 @@ class MoneyFst(GraphFst):
                 + pynutil.delete("\"")
                 + delete_space
             )
-            fractional = fractional | fractional2
+
+            fractional = fractional | fractional2 | fractional_default
 
         quantity = (
             delete_space
@@ -78,7 +80,6 @@ class MoneyFst(GraphFst):
         )
         optional_quantity = pynini.closure(quantity, 0, 1)
 
-        graph = optional_sign + (integer | integer + quantity | optional_integer + fractional + optional_quantity)
         unit = (
             pynutil.delete("currency:")
             + delete_space
@@ -86,6 +87,24 @@ class MoneyFst(GraphFst):
             + pynini.closure(NEMO_NOT_QUOTE, 1)
             + pynutil.delete("\"")
         )
-        graph = graph + delete_space + pynutil.insert(" ") + unit
+
+        if deterministic:
+            graph = optional_sign + (integer | integer + quantity | optional_integer + fractional + optional_quantity)
+            graph = graph + delete_space + pynutil.insert(" ") + unit
+        else:
+            """
+            (' integer_part: "three" MAJOR fractional_part: "eight five" , " read Jess aloud.', 69.33)
+            """
+            # graph = optional_sign + (integer | integer + quantity | optional_integer + fractional + optional_quantity)
+            # graph = optional_integer + fractional + optional_quantity + delete_space + pynutil.insert(" ") + unit + pynutil.insert(' CENTS')
+
+            minor_currencies = []
+            with open(get_abs_path("data/currency_minor.tsv"), 'r') as f:
+                for line in f:
+                    min_cur = line.strip()
+                    minor_currencies.append(pynini.closure(pynutil.insert(min_cur + " "), 0, 1))
+
+            graph = integer + delete_space + insert_space + unit + delete_space + insert_space + pynini.union(*minor_currencies) + fractional + insert_space + (pynutil.insert('cents') | pynutil.insert('pence'))
+
         delete_tokens = self.delete_tokens(graph)
         self.fst = delete_tokens.optimize()

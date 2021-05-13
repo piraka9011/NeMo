@@ -74,14 +74,17 @@ class NormalizerWithAudio(Normalizer):
         tagged_texts = set(get_tagged_texts(text) + get_tagged_texts(self.preprocess(text)))
         normalized_texts = []
         for tagged_text in tagged_texts:
-            if 'currency' in tagged_text and 'fract' in tagged_text:
-                print(tagged_text)
             self.parser(tagged_text)
             tokens = self.parser.parse()
             tags_reordered = self.generate_permutations(tokens)
             for tagged_text in tags_reordered:
                 tagged_text = pynini.escape(tagged_text)
 
+                if 'currency' in tagged_text and 'fractional_part' in tagged_text:
+                    print(tagged_text)
+                # if 'integer_part: "three" currency: "dollars" fractional_part: "eighty five"' not in tagged_text:
+                #     continue
+                # print(tagged_text)
                 verbalizer_lattice = self.find_verbalizer(tagged_text)
                 if verbalizer_lattice.num_states() == 0:
                     continue
