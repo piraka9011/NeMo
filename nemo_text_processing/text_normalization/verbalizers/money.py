@@ -13,7 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nemo_text_processing.text_normalization.graph_utils import NEMO_NOT_QUOTE, GraphFst, delete_space, insert_space, get_abs_path
+from nemo_text_processing.text_normalization.graph_utils import (
+    NEMO_NOT_QUOTE,
+    GraphFst,
+    delete_space,
+    get_abs_path,
+    insert_space,
+)
 
 try:
     import pynini
@@ -104,7 +110,18 @@ class MoneyFst(GraphFst):
                     min_cur = line.strip()
                     minor_currencies.append(pynini.closure(pynutil.insert(min_cur + " "), 0, 1))
 
-            graph = integer + delete_space + insert_space + unit + delete_space + insert_space + pynini.union(*minor_currencies) + fractional + insert_space + (pynutil.insert('cents') | pynutil.insert('pence'))
+            graph = (
+                integer
+                + delete_space
+                + insert_space
+                + unit
+                + delete_space
+                + insert_space
+                + pynini.union(*minor_currencies)
+                + fractional
+                + insert_space
+                + (pynutil.insert('cents') | pynutil.insert('pence'))
+            )
 
         delete_tokens = self.delete_tokens(graph)
         self.fst = delete_tokens.optimize()

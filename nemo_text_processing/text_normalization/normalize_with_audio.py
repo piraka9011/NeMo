@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 import json
 import os
+import re
 from argparse import ArgumentParser
 from typing import List
 
+from nemo_text_processing.text_normalization.normalize import Normalizer
 from nemo_text_processing.text_normalization.taggers.tokenize_and_classify import ClassifyFst
 from nemo_text_processing.text_normalization.verbalizers.verbalize_final import VerbalizeFinalFst
-from nemo_text_processing.text_normalization.normalize import Normalizer
 from tqdm import tqdm
 
 from nemo.collections import asr as nemo_asr
@@ -50,7 +50,9 @@ class NormalizerWithAudio(Normalizer):
         self.verbalizer = VerbalizeFinalFst(deterministic=False)
         self.semiotic_classes = ['money', 'cardinal', 'decimal', 'measure', 'date', 'electronic', 'ordinal', 'time']
 
-    def normalize_with_audio(self, text: str, transcript: str, asr_vocabulary: List[str], verbose: bool=False, asr_lower: bool=True) -> str:
+    def normalize_with_audio(
+        self, text: str, transcript: str, asr_vocabulary: List[str], verbose: bool = False, asr_lower: bool = True
+    ) -> str:
         """
         Main function. Normalizes tokens from written to spoken form
             e.g. 12 kg -> twelve kilograms
@@ -60,6 +62,7 @@ class NormalizerWithAudio(Normalizer):
             verbose: whether to print intermediate meta information
         Returns: spoken form that matches the audio file best
         """
+
         def get_tagged_texts(text):
             text = text.strip()
             if not text:
@@ -80,11 +83,6 @@ class NormalizerWithAudio(Normalizer):
             for tagged_text in tags_reordered:
                 tagged_text = pynini.escape(tagged_text)
 
-                if 'currency' in tagged_text and 'fractional_part' in tagged_text:
-                    print(tagged_text)
-                # if 'integer_part: "three" currency: "dollars" fractional_part: "eighty five"' not in tagged_text:
-                #     continue
-                # print(tagged_text)
                 verbalizer_lattice = self.find_verbalizer(tagged_text)
                 if verbalizer_lattice.num_states() == 0:
                     continue
@@ -103,7 +101,25 @@ class NormalizerWithAudio(Normalizer):
             for punct in punctuation:
                 normalized_texts[i] = normalized_texts[i].replace(f' {punct}', punct)
             normalized_texts[i] = (
-                normalized_texts[i].replace('--', '-').replace('( ', '(').replace(' )', ')').replace('  ', ' ')
+                normalized_texts[i]
+                .replace('--', '-')
+                .replace('( ', '(')
+                .replace(' )', ')')
+                .replace('  ', ' ')
+                .replace('”', '"')
+                .replace("’", "'")
+                .replace("»", '"')
+                .replace("«", '"')
+                .replace("\\", "")
+                .replace("”", '"')
+                .replace("„", '"')
+                .replace("´", "'")
+                .replace("’", "'")
+                .replace('“', '"')
+                .replace('“', '"')
+                .replace("‘", "'")
+                .replace('`', "'")
+                .replace('“', '"')
             )
         normalized_texts = set(normalized_texts)
 
@@ -162,11 +178,10 @@ def _get_asr_model(asr_model: nemo_asr.models.EncDecCTCModel):
     vocabulary = asr_model.cfg.decoder.vocabulary
     return asr_model, vocabulary
 
+
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument(
-        "--input", help="input string", default=None, type=str
-    )
+    parser.add_argument("--input", help="input string", default=None, type=str)
     parser.add_argument(
         "--input_case", help="input capitalization", choices=["lower_cased", "cased"], default="cased", type=str
     )
@@ -176,6 +191,7 @@ def parse_args():
         '--model', type=str, default='QuartzNet15x5Base-En', help='Pre-trained model name or path to model checkpoint'
     )
     return parser.parse_args()
+
 
 def main(args):
     if not os.path.exists(args.audio_data):
@@ -221,6 +237,7 @@ def main(args):
             normalized_text, cer = normalizer.normalize_with_audio(args.input, transcript, verbose=args.verbose)
             print(normalized_text)
 
+
 if __name__ == "__main__":
     args = parse_args()
 
@@ -229,5 +246,3 @@ if __name__ == "__main__":
         normalized_text, cer = normalizer.normalize_with_audio(args.input, None, None, verbose=args.verbose)
     else:
         main(args)
-
-

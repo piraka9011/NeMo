@@ -57,7 +57,7 @@ class ClassifyFst(GraphFst):
         ordinal = OrdinalFst(cardinal=cardinal)
         ordinal_graph = ordinal.fst
 
-        decimal = DecimalFst(cardinal=cardinal)
+        decimal = DecimalFst(cardinal=cardinal, deterministic=deterministic)
         decimal_graph = decimal.fst
 
         measure_graph = MeasureFst(cardinal=cardinal, decimal=decimal, deterministic=deterministic).fst

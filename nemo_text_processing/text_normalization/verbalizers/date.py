@@ -39,7 +39,7 @@ class DateFst(GraphFst):
         ordinal: OrdinalFst
     """
 
-    def __init__(self, ordinal: GraphFst, deterministic: bool=True):
+    def __init__(self, ordinal: GraphFst, deterministic: bool = True):
         super().__init__(name="date", kind="verbalize")
 
         month = pynini.closure(NEMO_NOT_QUOTE, 1)
@@ -47,13 +47,7 @@ class DateFst(GraphFst):
         if not deterministic:
             month |= pynutil.insert(" of ") + month
 
-        month = (
-                pynutil.delete("month:")
-                + delete_space
-                + pynutil.delete("\"")
-                + month
-                + pynutil.delete("\"")
-        )
+        month = pynutil.delete("month:") + delete_space + pynutil.delete("\"") + month + pynutil.delete("\"")
 
         day = (
             pynutil.delete("day:")
