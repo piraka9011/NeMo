@@ -73,7 +73,7 @@ class MoneyFst(GraphFst):
                 + delete_space
             )
 
-            fractional = fractional | fractional2 | fractional_default
+            fractional = fractional2 | fractional_default
 
         quantity = (
             delete_space
@@ -108,7 +108,7 @@ class MoneyFst(GraphFst):
             with open(get_abs_path("data/currency_minor.tsv"), 'r') as f:
                 for line in f:
                     min_cur = line.strip()
-                    minor_currencies.append(pynini.closure(pynutil.insert(min_cur + " "), 0, 1))
+                    minor_currencies.append(pynini.closure(pynutil.insert(min_cur), 0, 1))
 
             graph = (
                 integer
@@ -117,10 +117,10 @@ class MoneyFst(GraphFst):
                 + unit
                 + delete_space
                 + insert_space
-                + pynini.union(*minor_currencies)
+                + pynini.closure(pynutil.insert("and "), 0, 1)
                 + fractional
                 + insert_space
-                + (pynutil.insert('cents') | pynutil.insert('pence'))
+                + pynini.union(*minor_currencies)
             )
 
         delete_tokens = self.delete_tokens(graph)
