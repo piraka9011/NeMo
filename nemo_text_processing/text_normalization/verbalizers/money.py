@@ -42,24 +42,15 @@ class MoneyFst(GraphFst):
 
     def __init__(self, decimal: GraphFst, deterministic=True):
         super().__init__(name="money", kind="verbalize")
-        optional_sign = pynini.closure(pynini.cross("negative: \"true\"", "minus ") + delete_space, 0, 1)
-        integer = (
-            pynutil.delete("integer_part:")
-            + delete_space
-            + pynutil.delete("\"")
-            + pynini.closure(NEMO_NOT_QUOTE, 1)
-            + pynutil.delete("\"")
-        )
-        optional_integer = pynini.closure(integer + delete_space + insert_space, 0, 1)
-        fractional_default = (
-            pynutil.delete("fractional_part:")
-            + delete_space
-            + pynutil.delete("\"")
-            + pynini.closure(NEMO_NOT_QUOTE, 1)
-            + pynutil.delete("\"")
-        )
 
-        fractional = pynutil.insert("point ") + fractional_default
+        unit = (
+                pynutil.delete("currency:")
+                + delete_space
+                + pynutil.delete("\"")
+                + pynini.closure(NEMO_NOT_QUOTE, 1)
+                + pynutil.delete("\"")
+        )
+        graph = decimal.numbers + delete_space + pynutil.insert(" ") + unit
 
         if not deterministic:
             fractional2 = (
@@ -73,36 +64,7 @@ class MoneyFst(GraphFst):
                 + delete_space
             )
 
-            fractional = fractional2 | fractional_default
-
-        quantity = (
-            delete_space
-            + insert_space
-            + pynutil.delete("quantity:")
-            + delete_space
-            + pynutil.delete("\"")
-            + pynini.closure(NEMO_NOT_QUOTE, 1)
-            + pynutil.delete("\"")
-        )
-        optional_quantity = pynini.closure(quantity, 0, 1)
-
-        unit = (
-            pynutil.delete("currency:")
-            + delete_space
-            + pynutil.delete("\"")
-            + pynini.closure(NEMO_NOT_QUOTE, 1)
-            + pynutil.delete("\"")
-        )
-
-        if deterministic:
-            graph = optional_sign + (integer | integer + quantity | optional_integer + fractional + optional_quantity)
-            graph = graph + delete_space + pynutil.insert(" ") + unit
-        else:
-            """
-            (' integer_part: "three" MAJOR fractional_part: "eight five" , " read Jess aloud.', 69.33)
-            """
-            # graph = optional_sign + (integer | integer + quantity | optional_integer + fractional + optional_quantity)
-            # graph = optional_integer + fractional + optional_quantity + delete_space + pynutil.insert(" ") + unit + pynutil.insert(' CENTS')
+            fractional = fractional2 | decimal.fractional_default | decimal.fractional
 
             minor_currencies = []
             with open(get_abs_path("data/currency_minor.tsv"), 'r') as f:
@@ -111,7 +73,7 @@ class MoneyFst(GraphFst):
                     minor_currencies.append(pynini.closure(pynutil.insert(min_cur), 0, 1))
 
             graph = (
-                integer
+                decimal.integer
                 + delete_space
                 + insert_space
                 + unit
@@ -121,7 +83,7 @@ class MoneyFst(GraphFst):
                 + fractional
                 + insert_space
                 + pynini.union(*minor_currencies)
-            )
+            ) | graph
 
         delete_tokens = self.delete_tokens(graph)
         self.fst = delete_tokens.optimize()
