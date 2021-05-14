@@ -137,7 +137,8 @@ class NormalizerWithAudio(Normalizer):
 
         normalized_options = sorted(normalized_options, key=lambda x: x[1])
         if verbose:
-            for option in normalized_options:
+            normalized_options_ = sorted(normalized_options, key=lambda x: x[0])
+            for option in normalized_options_:
                 print(option)
         return normalized_options[0]
 

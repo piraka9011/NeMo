@@ -43,7 +43,7 @@ class DecimalFst(GraphFst):
         )
         self.optional_integer = pynini.closure(self.integer + delete_space + insert_space, 0, 1)
         self.fractional_default = (
-            + pynutil.delete("fractional_part:")
+            pynutil.delete("fractional_part:")
             + delete_space
             + pynutil.delete("\"")
             + pynini.closure(NEMO_NOT_QUOTE, 1)
@@ -62,7 +62,11 @@ class DecimalFst(GraphFst):
         )
         self.optional_quantity = pynini.closure(self.quantity, 0, 1)
 
-        graph = self.optional_sign + (self.integer | self.integer + self.quantity | self.optional_integer + self.fractional + self.optional_quantity)
+        graph = self.optional_sign + (
+            self.integer
+            | self.integer + self.quantity
+            | self.optional_integer + self.fractional + self.optional_quantity
+        )
         self.numbers = graph
         delete_tokens = self.delete_tokens(graph)
         self.fst = delete_tokens.optimize()

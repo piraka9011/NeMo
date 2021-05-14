@@ -44,11 +44,11 @@ class MoneyFst(GraphFst):
         super().__init__(name="money", kind="verbalize")
 
         unit = (
-                pynutil.delete("currency:")
-                + delete_space
-                + pynutil.delete("\"")
-                + pynini.closure(NEMO_NOT_QUOTE, 1)
-                + pynutil.delete("\"")
+            pynutil.delete("currency:")
+            + delete_space
+            + pynutil.delete("\"")
+            + pynini.closure(NEMO_NOT_QUOTE, 1)
+            + pynutil.delete("\"")
         )
         graph = decimal.numbers + delete_space + pynutil.insert(" ") + unit
 
@@ -64,7 +64,7 @@ class MoneyFst(GraphFst):
                 + delete_space
             )
 
-            fractional = fractional2 | decimal.fractional_default | decimal.fractional
+            fractional = fractional2 | decimal.fractional_default
 
             minor_currencies = []
             with open(get_abs_path("data/currency_minor.tsv"), 'r') as f:
